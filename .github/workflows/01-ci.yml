@@ -12,7 +12,7 @@ on:
 
 jobs:
 
-    # =========================================================
+  # =========================================================
   # Terraform Infrastructure Check
   # =========================================================
   terraform-check:
@@ -141,7 +141,7 @@ jobs:
     name: Build and Push ${{ matrix.image }}
     runs-on: ubuntu-latest
 
-    # All backend tests must pass before this job starts
+    # Terraform check and backend tests must pass before this job starts
     needs:
       - terraform-check
       - backend-test
@@ -189,9 +189,17 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --platform linux/amd64 \
-            -t ${{ vars.ACR_LOGIN_SERVER }}/${{ matrix.image }}:${{ github.sha }} \
-            ./${{ matrix.service }}
+          --platform linux/amd64 \
+          -t ${{ matrix.image }}:${{ github.sha }} \
+          -t ${{ vars.ACR_LOGIN_SERVER }}/${{ matrix.image }}:${{ github.sha }} \
+          ./${{ matrix.service }}
+      
+      - name: Docker Scout Vulnerability Scan
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: ${{ matrix.image }}:${{ github.sha }}
+          only-severities: critical,high
 
       - name: Push Docker image with commit SHA
         run: |
