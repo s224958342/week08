@@ -143,6 +143,27 @@ jobs:
           kubectl rollout status deployment/enrollment-service \
             -n staging \
             --timeout=300s
+      
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Install Prometheus and Grafana
+        run: |
+          helm repo add prometheus-community \
+            https://prometheus-community.github.io/helm-charts
+
+          helm repo update
+
+          helm upgrade --install monitoring \
+            prometheus-community/kube-prometheus-stack \
+            --namespace monitoring \
+            --create-namespace \
+            --wait
+
+      - name: Verify monitoring stack
+        run: |
+          kubectl get pods -n monitoring
+          kubectl get svc -n monitoring
 
       - name: Show staging resources
         run: |
